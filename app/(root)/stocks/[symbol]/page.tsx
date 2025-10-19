@@ -8,10 +8,20 @@ import {
   COMPANY_PROFILE_WIDGET_CONFIG,
   COMPANY_FINANCIALS_WIDGET_CONFIG,
 } from "@/lib/constants";
+import { isStockInWatchlist } from "@/lib/actions/watchlist.action";
+import { getCompanyProfile } from "@/lib/actions/finnhub.action";
 
 export default async function StockDetails({ params }: StockDetailsPageProps) {
   const { symbol } = await params;
   const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
+  
+  // Get watchlist status and company name
+  const [isInWatchlist, companyData] = await Promise.all([
+    isStockInWatchlist(symbol),
+    getCompanyProfile(symbol)
+  ]);
+  
+  const companyName = companyData?.name || symbol.toUpperCase();
 
   return (
     <div className="flex min-h-screen p-4 md:p-6 lg:p-8">
@@ -42,7 +52,11 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
         {/* Right column */}
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
-            <WatchlistButton symbol={symbol.toUpperCase()} company={symbol.toUpperCase()} isInWatchlist={false} />
+            <WatchlistButton 
+              symbol={symbol.toUpperCase()} 
+              company={companyName} 
+              isInWatchlist={isInWatchlist} 
+            />
           </div>
 
           <TradingViewWidget
