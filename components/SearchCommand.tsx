@@ -7,7 +7,7 @@ import {Loader2,  Star,  TrendingUp} from "lucide-react";
 import Link from "next/link";
 import {searchStocks} from "@/lib/actions/finnhub.action";
 import {useDebounce} from "@/hooks/useDebounce";
-import {addToWatchlist, removeFromWatchlist} from "@/lib/actions/watchlist.action";
+import {addToWatchlist, removeFromWatchlist, enrichStocksWithWatchlistStatus} from "@/lib/actions/watchlist.action";
 import {toast} from "sonner";
 
 export default function SearchCommand({ renderAs = 'button', label = 'Add stock', initialStocks }: SearchCommandProps) {
@@ -36,7 +36,8 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
     setLoading(true)
     try {
         const results = await searchStocks(searchTerm.trim());
-        setStocks(results);
+        const enrichedResults = await enrichStocksWithWatchlistStatus(results);
+        setStocks(enrichedResults);
     } catch {
       setStocks([])
     } finally {
@@ -61,6 +62,7 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
     e.stopPropagation();
 
     const originalStocks = [...stocks];
+    const wasInWatchlist = stock.isInWatchlist;
     
     // Optimistic update
     setStocks(prevStocks => 
@@ -72,7 +74,7 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
     );
 
     try {
-      if (stock.isInWatchlist) {
+      if (wasInWatchlist) {
         const result = await removeFromWatchlist(stock.symbol);
         if (result.success) {
           toast.success(`${stock.symbol} removed from watchlist`);

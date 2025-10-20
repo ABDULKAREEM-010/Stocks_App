@@ -105,3 +105,115 @@ export async function isStockInWatchlist(symbol: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function enrichStocksWithWatchlistStatus(
+  stocks: StockWithWatchlistStatus[]
+): Promise<StockWithWatchlistStatus[]> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    
+    if (!session?.user?.id || !stocks.length) {
+      return stocks;
+    }
+
+    await connectToDatabase();
+
+    // Get all symbols in user's watchlist
+    const watchlistItems = await Watchlist.find(
+      { userId: session.user.id },
+      { symbol: 1 }
+    ).lean();
+
+    const watchlistSymbols = new Set(
+      watchlistItems.map(item => item.symbol.toUpperCase())
+    );
+
+    // Update isInWatchlist for each stock
+    return stocks.map(stock => ({
+      ...stock,
+      isInWatchlist: watchlistSymbols.has(stock.symbol.toUpperCase())
+    }));
+  } catch (err) {
+    console.error('enrichStocksWithWatchlistStatus error:', err);
+    return stocks;
+  }
+}
+
+export async function getUserWatchlist(): Promise<StockWithData[]> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    
+    if (!session?.user?.id) {
+      return [];
+    }
+
+    await connectToDatabase();
+
+    const items = await Watchlist.find({ userId: session.user.id })
+      .sort({ addedAt: -1 })
+      .lean();
+
+    if (!items || items.length === 0) {
+      return [];
+    }
+
+    // Fetch stock data from Finnhub for each watchlist item
+    const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY ?? process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
+    
+    const stocksWithData = await Promise.all(
+      items.map(async (item) => {
+        try {
+          // Fetch quote data
+          const quoteRes = await fetch(
+            `https://finnhub.io/api/v1/quote?symbol=${item.symbol}&token=${FINNHUB_API_KEY}`,
+            { next: { revalidate: 60 } }
+          );
+          const quote: QuoteData = await quoteRes.json();
+
+          // Fetch profile data
+          const profileRes = await fetch(
+            `https://finnhub.io/api/v1/stock/profile2?symbol=${item.symbol}&token=${FINNHUB_API_KEY}`,
+            { next: { revalidate: 3600 } }
+          );
+          const profile: ProfileData = await profileRes.json();
+
+          const currentPrice = quote?.c || 0;
+          const changePercent = quote?.dp || 0;
+          const marketCap = profile?.marketCapitalization || 0;
+
+          return {
+            userId: item.userId,
+            symbol: item.symbol,
+            company: item.company,
+            addedAt: item.addedAt,
+            currentPrice,
+            changePercent,
+            priceFormatted: currentPrice > 0 ? `$${currentPrice.toFixed(2)}` : 'N/A',
+            changeFormatted: changePercent !== 0 ? `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%` : 'N/A',
+            marketCap: marketCap > 0 ? `$${(marketCap / 1000).toFixed(2)}B` : 'N/A',
+            peRatio: 'N/A',
+          };
+        } catch (error) {
+          console.error(`Error fetching data for ${item.symbol}:`, error);
+          return {
+            userId: item.userId,
+            symbol: item.symbol,
+            company: item.company,
+            addedAt: item.addedAt,
+            currentPrice: 0,
+            changePercent: 0,
+            priceFormatted: 'N/A',
+            changeFormatted: 'N/A',
+            marketCap: 'N/A',
+            peRatio: 'N/A',
+          };
+        }
+      })
+    );
+
+    return stocksWithData;
+  } catch (err) {
+    console.error('getUserWatchlist error:', err);
+    return [];
+  }
+}
