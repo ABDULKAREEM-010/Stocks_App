@@ -32,11 +32,20 @@ export const sendSignUpEmail = inngest.createFunction(
     { id: 'sign-up-email' },
     { event: 'app/user.created'},
     async ({ event, step }) => {
+        // Log the incoming event data for debugging
+        console.log('📧 Inngest function triggered with event data:', JSON.stringify(event.data, null, 2));
+
+        // Validate that we have the required data
+        if (!event.data.email || !event.data.name) {
+            console.error('❌ Missing required email or name in event data');
+            throw new Error('Missing required email or name in event data');
+        }
+
         const userProfile = `
-            - Country: ${event.data.country}
-            - Investment goals: ${event.data.investmentGoals}
-            - Risk tolerance: ${event.data.riskTolerance}
-            - Preferred industry: ${event.data.preferredIndustry}
+            - Country: ${event.data.country || 'Not specified'}
+            - Investment goals: ${event.data.investmentGoals || 'Not specified'}
+            - Risk tolerance: ${event.data.riskTolerance || 'Not specified'}
+            - Preferred industry: ${event.data.preferredIndustry || 'Not specified'}
         `
 
         const prompt = PERSONALIZED_WELCOME_EMAIL_PROMPT.replace('{{userProfile}}', userProfile)
@@ -58,8 +67,10 @@ export const sendSignUpEmail = inngest.createFunction(
             const part = response.candidates?.[0]?.content?.parts?.[0];
             const introText = (part && 'text' in part ? part.text : null) ||'Thanks for joining Signalist. You now have the tools to track markets and make smarter moves.'
 
-            const { data: { email, name } } = event;
+            const { email, name } = event.data;
 
+            console.log('📤 Attempting to send email to:', email);
+            
             return await sendWelcomeEmail({ email, name, intro: introText });
         })
 

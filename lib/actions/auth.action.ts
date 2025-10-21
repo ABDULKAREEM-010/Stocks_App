@@ -16,14 +16,25 @@ export const signUpWithEmail = async ({ email, password, fullName, country, inve
 
         // Send welcome email asynchronously - don't block signup if it fails
         if(response) {
-            console.log('📧 Sending Inngest event...');
+            const eventData = { 
+                email, 
+                name: fullName, 
+                country, 
+                investmentGoals, 
+                riskTolerance, 
+                preferredIndustry 
+            };
+            
+            console.log('📧 Sending Inngest event with data:', JSON.stringify(eventData, null, 2));
+            
             inngest.send({
                 name: 'app/user.created',
-                data: { email, name: fullName, country, investmentGoals, riskTolerance, preferredIndustry }
-            }).then(() => {
-                console.log('✅ Inngest event sent successfully');
+                data: eventData
+            }).then((result) => {
+                console.log('✅ Inngest event sent successfully:', result);
             }).catch((err) => {
-                console.error('⚠️ Failed to send welcome email event (non-critical):', err.message);
+                console.error('⚠️ Failed to send welcome email event (non-critical):', err);
+                console.error('⚠️ Error details:', err.message, err.stack);
             });
         }
 

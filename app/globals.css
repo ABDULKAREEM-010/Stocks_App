@@ -160,29 +160,56 @@
   .header-wrapper {
     @apply flex justify-between items-center px-6 py-4 text-gray-500;
   }
+  
+  /* Auth Layout - Fixed scrolling and responsiveness */
   .auth-layout {
-    @apply flex flex-col justify-between lg:flex-row h-screen bg-gray-900 relative overflow-hidden;
+    @apply flex flex-col lg:flex-row min-h-screen bg-gray-900;
   }
+  
+  .auth-left {
+    @apply w-full lg:w-1/2 xl:w-[45%] flex flex-col;
+  }
+  
+  .auth-left-inner {
+    @apply w-full h-full px-6 sm:px-8 lg:px-12 xl:px-16 flex flex-col overflow-y-auto;
+  }
+  
   .auth-logo {
-    @apply pt-6 lg:pt-8 mb-8 lg:mb-12;
+    @apply pt-6 lg:pt-8 mb-6 lg:mb-8 flex-shrink-0;
   }
+  
+  .auth-right {
+    @apply w-full lg:w-1/2 xl:w-[55%] bg-gray-800 px-6 py-6 md:px-8 md:py-8 lg:px-12 lg:py-10 xl:px-16 flex flex-col justify-between overflow-hidden border-t border-gray-700 lg:border-t-0 lg:border-l;
+  }
+  
+  .auth-right-content {
+    @apply z-10 mb-6 lg:mb-8 flex-shrink-0;
+  }
+  
+  .auth-right-image {
+    @apply flex-1 relative overflow-hidden min-h-[300px] lg:min-h-[400px];
+  }
+  
+  .auth-blockquote {
+    @apply text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-gray-300 mb-4 md:mb-6 lg:mb-8 leading-relaxed;
+  }
+  
+  .auth-testimonial-author {
+    @apply text-sm md:text-base lg:text-lg font-bold text-gray-300 not-italic;
+  }
+  
+  .auth-dashboard-preview {
+    @apply w-full h-full object-cover object-top rounded-xl shadow-2xl border-4 border-gray-700 lg:block hidden;
+  }
+  
   .auth-left-section {
     @apply w-full lg:w-[45%] lg:h-screen px-6 lg:px-16 flex flex-col overflow-y-auto;
   }
   .auth-right-section {
     @apply w-full max-lg:border-t max-lg:border-gray-600 lg:w-[55%] lg:h-screen bg-gray-800 px-6 py-4 md:p-6 lg:py-12 lg:px-18 flex flex-col justify-start;
   }
-  .auth-blockquote {
-    @apply text-sm md:text-xl lg:text-2xl font-medium text-gray-400 mb-1 md:mb-6 lg:mb-8;
-  }
-  .auth-testimonial-author {
-    @apply text-xs md:text-lg font-bold text-gray-400 not-italic;
-  }
-  .auth-dashboard-preview {
-    @apply border-6 border-gray-800 left-0 hidden w-[1024px] h-auto max-w-none lg:block rounded-xl shadow-2xl;
-  }
   .form-title {
-    @apply text-4xl font-bold text-gray-400 mb-10;
+    @apply text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-400 mb-6 lg:mb-10;
   }
   .form-label {
     @apply text-sm font-medium text-gray-400;

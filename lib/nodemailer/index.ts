@@ -10,19 +10,45 @@ export const transporter = nodemailer.createTransport({
 })
 
 export const sendWelcomeEmail = async ({ email, name, intro }: WelcomeEmailData) => {
+    // Validate inputs
+    if (!email || typeof email !== 'string' || !email.trim()) {
+        console.error('❌ Invalid email provided to sendWelcomeEmail:', email);
+        throw new Error('Invalid email address provided');
+    }
+    
+    if (!name || typeof name !== 'string' || !name.trim()) {
+        console.error('❌ Invalid name provided to sendWelcomeEmail:', name);
+        throw new Error('Invalid name provided');
+    }
+
+    console.log('✅ Preparing to send welcome email to:', email, 'Name:', name);
+
     const htmlTemplate = WELCOME_EMAIL_TEMPLATE
         .replace('{{name}}', name)
         .replace('{{intro}}', intro);
 
     const mailOptions = {
-        from: `"Signalist" <signalist@mohammed.ak>`,
+        from: `"Signalist" <${process.env.NODEMAILER_EMAIL}>`,
         to: email,
         subject: `Welcome to Signalist - your stock market toolkit is ready!`,
         text: 'Thanks for joining Signalist',
         html: htmlTemplate,
     }
 
-    await transporter.sendMail(mailOptions);
+    console.log('📧 Sending email with options:', {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject
+    });
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('✅ Email sent successfully:', info.messageId);
+        return info;
+    } catch (error) {
+        console.error('❌ Failed to send email:', error);
+        throw error;
+    }
 }
 
 export const sendNewsSummaryEmail = async (

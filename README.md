@@ -222,6 +222,23 @@ Every day at noon (12:00 PM), Inngest triggers a function that:
 
 See [TESTING_GUIDE.md](./TESTING_GUIDE.md) for common issues and solutions.
 
+### Quick Testing Scripts
+
+**Test Email Configuration:**
+```bash
+node test-email.js
+```
+
+**Test Inngest Events:**
+```bash
+# Make sure Inngest dev server is running first
+npx inngest-cli@latest dev
+# Then in another terminal:
+node test-inngest.js
+```
+
+### Common Issues
+
 **Quick fixes:**
 - **No stocks in search:** Check `FINNHUB_API_KEY`
 - **Database errors:** Verify `MONGODB_URL`
