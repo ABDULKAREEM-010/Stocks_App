@@ -33,13 +33,18 @@ export const sendSignUpEmail = inngest.createFunction(
     { event: 'app/user.created'},
     async ({ event, step }) => {
         // Log the incoming event data for debugging
-        console.log('📧 Inngest function triggered with event data:', JSON.stringify(event.data, null, 2));
+        console.log('📧 Inngest function triggered!');
+        console.log('📧 Full event object:', JSON.stringify(event, null, 2));
+        console.log('📧 Event data:', JSON.stringify(event.data, null, 2));
 
         // Validate that we have the required data
-        if (!event.data.email || !event.data.name) {
+        if (!event.data || !event.data.email || !event.data.name) {
             console.error('❌ Missing required email or name in event data');
+            console.error('❌ Received event.data:', event.data);
             throw new Error('Missing required email or name in event data');
         }
+
+        console.log('✅ Validation passed - email:', event.data.email, 'name:', event.data.name);
 
         const userProfile = `
             - Country: ${event.data.country || 'Not specified'}
@@ -48,8 +53,12 @@ export const sendSignUpEmail = inngest.createFunction(
             - Preferred industry: ${event.data.preferredIndustry || 'Not specified'}
         `
 
+        console.log('📝 User profile for AI:', userProfile);
+
         const prompt = PERSONALIZED_WELCOME_EMAIL_PROMPT.replace('{{userProfile}}', userProfile)
 
+        console.log('🤖 Calling Gemini AI...');
+        
         const response = await step.ai.infer('generate-welcome-intro', {
             model: step.ai.models.gemini({ model: 'gemini-2.5-flash-lite' }),
             body: {
@@ -63,16 +72,20 @@ export const sendSignUpEmail = inngest.createFunction(
             }
         })
 
+        console.log('✅ AI response received');
+
         await step.run('send-welcome-email', async () => {
             const part = response.candidates?.[0]?.content?.parts?.[0];
             const introText = (part && 'text' in part ? part.text : null) ||'Thanks for joining Signalist. You now have the tools to track markets and make smarter moves.'
 
             const { email, name } = event.data;
 
-            console.log('📤 Attempting to send email to:', email);
+            console.log('📤 Attempting to send email to:', email, 'with name:', name);
             
             return await sendWelcomeEmail({ email, name, intro: introText });
         })
+
+        console.log('✅ Welcome email sent successfully!');
 
         return {
             success: true,

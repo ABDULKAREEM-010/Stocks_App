@@ -27,15 +27,19 @@ export const signUpWithEmail = async ({ email, password, fullName, country, inve
             
             console.log('📧 Sending Inngest event with data:', JSON.stringify(eventData, null, 2));
             
-            inngest.send({
-                name: 'app/user.created',
-                data: eventData
-            }).then((result) => {
-                console.log('✅ Inngest event sent successfully:', result);
-            }).catch((err) => {
+            try {
+                const result = await inngest.send({
+                    name: 'app/user.created',
+                    data: eventData
+                });
+                console.log('✅ Inngest event sent successfully:', JSON.stringify(result));
+            } catch (err) {
                 console.error('⚠️ Failed to send welcome email event (non-critical):', err);
-                console.error('⚠️ Error details:', err.message, err.stack);
-            });
+                if (err instanceof Error) {
+                    console.error('⚠️ Error message:', err.message);
+                    console.error('⚠️ Error stack:', err.stack);
+                }
+            }
         }
 
         return { success: true, data: response }
